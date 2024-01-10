@@ -1,6 +1,6 @@
 This repository is an example of creating individual event-related des/synchronization ERDS maps and plots for EEG Motor Imagery data
 
-The repository contains code and instructions to read the ["EEG datasets for motor imagery brain-computer interface"](https://doi.org/10.1093/gigascience/gix034) which is in .mat format and transforms it to MNE-python classes. Also demonstrates how to apply Artifact Subspace Reconstruction (ASR) to clean the data. Contains code to create epochs and finally, it includes custom functions that uses MNE-python tfr (time-frequency) class to create ERDS maps and plots.
+The repository contains code and instructions to read the ["EEG datasets for motor imagery brain-computer interface"](https://doi.org/10.1093/gigascience/gix034) which is in .mat format and transforms it to MNE-python classes. Also demonstrates how to apply Artifact Subspace Reconstruction (ASR) to clean the data. Contains code to create epochs and also includes custom functions that uses MNE-python tfr (time-frequency) class to create ERDS maps and plots, and a ![html report ](Report s41 - ERDS Plots.html).
 
 Example plots from analysis of subject 41 of the dataset: 
 
