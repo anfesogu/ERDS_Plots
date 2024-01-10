@@ -1,345 +1,180 @@
+from scipy.io import loadmat 
 import mne
-import pymatreader
 import numpy as np
+import pandas as pd
 
 
+def data2mne(fname_mat, scale=1e-6):
 
-ch_names = [
-    "Fp1",
-    "AF7",
-    "AF3",
-    "F1",
-    "F3",
-    "F5",
-    "F7",
-    "FT7",
-    "FC5",
-    "FC3",
-    "FC1",
-    "C1",
-    "C3",
-    "C5",
-    "T7",
-    "TP7",
-    "CP5",
-    "CP3",
-    "CP1",
-    "P1",
-    "P3",
-    "P5",
-    "P7",
-    "P9",
-    "PO7",
-    "PO3",
-    "O1",
-    "Iz",
-    "Oz",
-    "POz",
-    "Pz",
-    "CPz",
-    "Fpz",
-    "Fp2",
-    "AF8",
-    "AF4",
-    "AFz",
-    "Fz",
-    "F2",
-    "F4",
-    "F6",
-    "F8",
-    "FT8",
-    "FC6",
-    "FC4",
-    "FC2",
-    "FCz",
-    "Cz",
-    "C2",
-    "C4",
-    "C6",
-    "T8",
-    "TP8",
-    "CP6",
-    "CP4",
-    "CP2",
-    "P2",
-    "P4",
-    "P6",
-    "P8",
-    "P10",
-    "PO8",
-    "PO4",
-    "O2",
-]
+    Data = loadmat(fname_mat)
 
+    # Motor Execution
+    EEG_ME_Left = Data['eeg']['movement_left'][0][0] 
+    EEG_ME_Right = Data['eeg']['movement_right'][0][0]
+    ME_Event = Data['eeg']['movement_event'][0][0]
 
-class Subject:
-    def __init__(self, subject_number, montage="biosemi64"):
-        folder = "EEG_Data/"
-        trial_path = folder + "s" + str(subject_number).zfill(2) + ".mat"
-        ch_types = ["eeg" for i in range(64)]
-        self.rawdata = pymatreader.read_mat(trial_path)
-        self.name = self.rawdata["eeg"]["subject"]
-        self.n_trials = self.rawdata["eeg"]["n_imagery_trials"]
-        self.noise = self.rawdata["eeg"]["noise"]
-        self.rest = self.rawdata["eeg"]["rest"]
-        self.srate = self.rawdata["eeg"]["srate"]
+    # Motor Imagery
+    EEG_MI_Left = Data['eeg']['imagery_left'][0][0]
+    EEG_MI_Right = Data['eeg']['imagery_right'][0][0]
+    MI_Event = Data['eeg']['imagery_event'][0][0]
 
-        self.imagery_left = self.rawdata["eeg"]["imagery_left"]
-        self.imagery_right = self.rawdata["eeg"]["imagery_right"]
+    # Resting State
+    RS = Data['eeg']['rest'][0][0]
 
-        self.imagery_event = self.rawdata["eeg"]["imagery_event"]
+    # Blinking - Noise1
+    Noise1 = Data['eeg']['noise'][0][0][0][0]
 
-        # self.locations = self.rawdata["eeg"][
-        #     "senloc"
-        # ]  # Locations are unfortunately useless without the reference points
-        self.locations_unit_sphere = self.rawdata["eeg"]["psenloc"]
+    # eyeball up-down - Noise2
+    Noise2 = Data['eeg']['noise'][0][0][1][0]
 
-        self.montage = mne.channels.make_standard_montage(montage)
-        self.info = mne.create_info(
-            ch_names, self.rawdata["eeg"]["srate"], ch_types=ch_types
-        ).set_montage(self.montage)
-        self.raw_array_left = mne.io.RawArray(self.imagery_left[:64], self.info)
-        # self.raw_array_left.set_montage(self.montage)
-        self.raw_array_right = mne.io.RawArray(self.imagery_right[:64], self.info)
-        # self.raw_array_right.set_montage(self.montage)
-        self.steps = list()
+    # eyeball left-right - Noise3
+    Noise3 = Data['eeg']['noise'][0][0][2][0]
 
-    def get_rawdata(self) -> list[mne.io.RawArray]:
-        return [self.raw_array_left.copy(), self.raw_array_right.copy()]
+    # jaw clenching - Noise4
+    Noise4 = Data['eeg']['noise'][0][0][3][0]
 
-    def get_processed_data(self) -> list[mne.io.RawArray]:
-        if isinstance(self.processed_raw_left, type(None)):
-            print("Preprocessing data...")
-            self.preprocess()
-        return [self.processed_raw_left.copy(), self.processed_raw_right.copy()]
+    # head movement - Noise5
+    Noise5 = Data['eeg']['noise'][0][0][4][0]
 
-    def get_epochs(self) -> list[mne.Epochs]:
-        if isinstance(self.epochs_left, type(None)):
-            print("Preprocessing data...")
-            self.preprocess()
-        return [self.epochs_left.copy(), self.epochs_right.copy()]
+    #General Info
+    sfreq = Data['eeg']['srate'][0][0][0][0] #Sampling Frequency
+    psenloc = Data['eeg']['psenloc'][0][0] #Sensor location projected to unit sphere
+    senloc = Data['eeg']['senloc'][0][0] #Sensor locations 3D
+    bad_trial_indices_voltage = Data['eeg']['bad_trial_indices'][0][0][0][0][0][0][0] #Bad trials indices voltage
+    bad_trial_indices_mi = Data['eeg']['bad_trial_indices'][0][0][0][0][0][0][1] #Bad trials indices MI
+    names_types = pd.read_excel(r'ch_names&types.xlsx') #Read file with ch names and types
+    ch_types = names_types['ch_types'].tolist() #ch_types
+    ch_names = names_types['ch_names'].tolist() #ch_names
 
-    def preprocess(self, steps={"average_reference": []}):
-        self.steps = list()
-        for step in steps.keys():
-            match step:
-                case "average_reference":
-                    self.processed_raw_left = (
-                        self.raw_array_left.copy().set_eeg_reference(
-                            ref_channels="average", projection=True
-                        )
-                    )
-                    self.processed_raw_right = (
-                        self.raw_array_right.copy().set_eeg_reference(
-                            ref_channels="average", projection=True
-                        )
-                    )
-                    self.steps.append("average_eeg_reference")
-                    self.processed_raw_left.apply_proj()
-                    self.processed_raw_right.apply_proj()
-                    print("Applied average reference")
-                case "rest_projection":
-                    rest_raw_array = mne.io.RawArray(self.rest[:64], self.info)
-                    rest_proj = mne.compute_proj_raw(
-                        rest_raw_array, n_eeg=3, n_mag=0, n_grad=0, verbose="DEBUG"
-                    )
-                    self.processed_raw_right.add_proj(rest_proj)
-                    self.processed_raw_left.add_proj(rest_proj)
-                    self.steps.append("add_rest_proj")
-                case "artifact_projection":
-                    noise_dict = {
-                        "eye_blinking": 0,
-                        "eyeball_movement_up_down": 1,
-                        "eyeball_movement_left_right": 2,
-                        "jaw_clenching": 3,
-                        "head_movement_left_right": 4,
-                    }
-                    for artifact in steps["artifact_projection"]:
-                        noise_raw_array = mne.io.RawArray(
-                            self.noise[noise_dict[artifact]][:64], self.info
-                        )
-                        noise_proj = mne.compute_proj_raw(
-                            noise_raw_array,
-                            n_eeg=3,
-                            n_mag=0,
-                            n_grad=0,
-                            verbose="DEBUG",
-                        )
-                        steps.append("add_" + artifact + "_proj")
-                        self.processed_raw_right.add_proj(noise_proj)
-                        self.processed_raw_left.add_proj(noise_proj)
-                case "ICA":
-                    ica = mne.preprocessing.ICA(
-                        n_components=steps["ICA"]["n_components"],
-                        method="fastica",
-                        random_state=0,
-                        max_iter=1000,
-                        verbose="DEBUG",
-                    )
-                    ica.fit(self.processed_raw_left)
-                    self.processed_raw_left = ica.apply(self.processed_raw_left)
-                    ica.fit(self.processed_raw_right)
-                    self.processed_raw_right = ica.apply(self.processed_raw_right)
-                    self.steps.append("ICA")
-                case "bandpass_filter":
-                    self.processed_raw_left.filter(
-                        steps["bandpass_filter"][0], steps["bandpass_filter"][1]
-                    )
-                    self.steps.append(
-                        f"bandpass_filter_{steps['bandpass_filter'][0]}_{steps['bandpass_filter'][1]}"
-                    )
+    # Create stimuli channel
+    Noise1_Event = np.zeros((1,Noise1.shape[1]))
+    Noise1_Event[0,0] = 1
+    Noise2_Event = np.zeros((1,Noise2.shape[1]))
+    Noise2_Event[0,0] = 2
+    Noise3_Event = np.zeros((1,Noise3.shape[1]))
+    Noise3_Event[0,0] = 3
+    Noise4_Event = np.zeros((1,Noise4.shape[1]))
+    Noise4_Event[0,0] = 4
+    Noise5_Event = np.zeros((1,Noise5.shape[1]))
+    Noise5_Event[0,0] = 5
+    RS_Event = np.zeros((1,RS.shape[1]))
+    RS_Event[0,0] = 6
+    ME_Event_Rigth = ME_Event * 7
+    ME_Event_Left = ME_Event * 8
+    MI_Event_Rigth = MI_Event * 9
+    MI_Event_Left = MI_Event * 10
 
-        event_indexes = []
-        event_id = {"imagery_event": 1}
-        for i in range(len(self.imagery_event)):
-            if self.imagery_event[i] == 1:
-                event_indexes.append(i)
-        events = np.array(
-            [event_indexes, [0] * len(event_indexes), [1] * len(event_indexes)]
-        ).T
-        self.epochs_left = mne.Epochs(
-            self.processed_raw_left,
-            events,
-            tmin=-2,
-            tmax=5,
-            baseline=(-0.5, -0.2),
-            event_id=event_id,
-        )
-        self.epochs_right = mne.Epochs(
-            self.processed_raw_right,
-            events,
-            tmin=-2,
-            tmax=5,
-            baseline=(-0.5, -0.2),
-            event_id=event_id,
-        )
-        self.steps.append("create_epochs")
-        # TODO: Is this indexation really correct?
-        # Don't know if [...][0] is left or right
-        bad_epochs_left = [
-            x - 1
-            for x in list(
-                self.rawdata["eeg"]["bad_trial_indices"]["bad_trial_idx_mi"][0]
-            )
-            + list(self.rawdata["eeg"]["bad_trial_indices"]["bad_trial_idx_voltage"][0])
-        ]
-        bad_epochs_right = [
-            x - 1
-            for x in list(
-                self.rawdata["eeg"]["bad_trial_indices"]["bad_trial_idx_mi"][1]
-            )
-            + list(self.rawdata["eeg"]["bad_trial_indices"]["bad_trial_idx_voltage"][1])
-        ]
+    # Join All Events and create stimuli channels
+    Event_Stimuli = np.concatenate((Noise1_Event, Noise2_Event, Noise3_Event, Noise4_Event, Noise5_Event, RS_Event, ME_Event_Rigth, ME_Event_Left, MI_Event_Rigth, MI_Event_Left), axis=1)
 
-        self.epochs_left.drop(bad_epochs_left)
-        self.epochs_right.drop(bad_epochs_right)
-        self.steps.append("drop_bad_trials")
+    # Join all data
+    Chs_Data = np.concatenate((Noise1, Noise2, Noise3, Noise4, Noise5, RS, EEG_ME_Right, EEG_ME_Left, EEG_MI_Right, EEG_MI_Left), axis=1) * scale #Convert from uV to V
 
+    # Create Info
+    info = mne.create_info(ch_names, sfreq, ch_types)
 
-def remove_artifacts(epochs, ica, threshold, t_end, picks, reason="artifacts"):
-    source = ica.get_sources(epochs.load_data())
-    epoch_indices = []
-    for i in range(len(source)):
-        cropped_data = source[i].pick(picks).copy().crop(None, t_end)
-        # if max value in cropped data exceeds threshold, drop epoch
-        if cropped_data._data.max() > threshold:
-            # selected_epochs.append(source[i])
-            epoch_indices.append(i)
-    return epochs.copy().drop(epoch_indices, reason=reason)
+    # Create a montage based on the electrode positions
+    SensorLoc = dict(zip(ch_names[0:64], psenloc.tolist()))
+    montage = mne.channels.make_dig_montage(ch_pos=SensorLoc, coord_frame='head')
 
+    # Include the montage in the info
+    info.set_montage(montage)
 
-def make__raw_and_epochs(
-    subject_number, set_average_reference=True, filter=None, baseline=None, reject=None
-):
-    ch_types = ["eeg" for i in range(64)]
-    rawdata = pymatreader.read_mat("EEG_Data/s" + str(subject_number).zfill(2) + ".mat")
+    # Create raw object
+    Raw_Data = np.concatenate((Chs_Data,Event_Stimuli), axis=0) 
+    raw = mne.io.RawArray(Raw_Data, info)
 
-    imagery_left = rawdata["eeg"]["imagery_left"]
-    imagery_right = rawdata["eeg"]["imagery_right"]
-    montage = mne.channels.make_standard_montage("biosemi64")
-    info = mne.create_info(
-        ch_names, rawdata["eeg"]["srate"], ch_types=ch_types
-    ).set_montage(montage)
+    return raw
 
-    raw_array_left = mne.io.RawArray(imagery_left[:64] * 1e-9, info)
-    raw_array_right = mne.io.RawArray(imagery_right[:64] * 1e-9, info)
+import asrpy
+def apply_ASR(raw,tmin=51,tmax=115,asr_fit=False):
 
-    if set_average_reference:
-        raw_array_left.set_eeg_reference(
-            ref_channels="average", projection=True
-        ).apply_proj()
-        raw_array_right.set_eeg_reference(
-            ref_channels="average", projection=True
-        ).apply_proj()
-    if filter is not None:
-        raw_array_left.filter(filter[0],filter[1])
-        raw_array_right.filter(filter[0],filter[1])
+    # Creating ASR object
+    asr = asrpy.ASR(sfreq=raw.info["sfreq"])
 
-    imagery_event = rawdata["eeg"]["imagery_event"]
-    event_id_left = {"imagery_left": 1}
-    event_id_right = {"imagery_right": 2}
-    event_indexes = []
-    for i in range(len(imagery_event)):
-        if imagery_event[i] == 1:
-            event_indexes.append(i)
-    events_left = np.array(
-        [event_indexes, [0] * len(event_indexes), [1] * len(event_indexes)]
-    ).T
-    events_right = np.array(
-        [event_indexes, [0] * len(event_indexes), [2] * len(event_indexes)]
-    ).T
+    # Filter the data - 0.5Hz Highpass
+    filtered = raw.load_data().copy().filter(0.5,None)
 
-    if baseline:
-        epochs_left = mne.Epochs(
-            raw_array_left,
-            events_left,
-            tmin=-2,
-            tmax=5,
-            baseline=baseline,
-            event_id=event_id_left,
-            reject=reject,
-        )
-        epochs_right = mne.Epochs(
-            raw_array_right,
-            events_right,
-            tmin=-2,
-            tmax=5,
-            baseline=baseline,
-            event_id=event_id_right,
-            reject=reject,
-        )
+    # Fit the ASR method with RS dataca
+    asr.fit(filtered.copy().crop(tmin=tmin,tmax=tmax))
+
+    if asr_fit:
+        return asr
     else:
-        epochs_left = mne.Epochs(
-            raw_array_left,
-            events_left,
-            tmin=-2,
-            tmax=5,
-            event_id=event_id_left,
-            baseline=None,
-            reject=reject,
+        # Applying the method to filtered data
+        return asr.transform(filtered)
+
+def create_name(subject, folder, type='read_mat'):
+    if type == 'read_mat':
+        fname = folder + '\s' + '{:02d}'.format(subject) + '.mat'
+    else:
+        fname = folder + '\s' + '{:02d}'.format(subject) + '_' + type + '.fif'
+    return fname
+
+import matplotlib.pyplot as plt
+def plot_TF_M(tfr, event_ids,mode='mean',baseline=None,vmin=None,vmax=None,fmin=None,fmax=None,cmap='RdBu',comment='', reporting=False):
+
+    if reporting:
+        figures = []
+
+    for event in event_ids:
+        # select desired epochs for visualization
+        tfr_ev = tfr[event]
+        fig, axes = plt.subplots(
+            1, 3, figsize=(12, 4), gridspec_kw={"width_ratios": [10, 10, 1]}
         )
-        epochs_right = mne.Epochs(
-            raw_array_right,
-            events_right,
-            tmin=-2,
-            tmax=5,
-            event_id=event_id_right,
-            baseline=None,
-            reject=reject,
-        )
-    # TODO: Is this indexation really correct?
-    # Don't know if [...][0] is left or right
-    # bad_epochs_left = [
-    #     x - 1
-    #     for x in list(rawdata["eeg"]["bad_trial_indices"]["bad_trial_idx_mi"][0])
-    #     + list(rawdata["eeg"]["bad_trial_indices"]["bad_trial_idx_voltage"][0])
-    # ]
-    # bad_epochs_right = [
-    #     x - 1
-    #     for x in list(rawdata["eeg"]["bad_trial_indices"]["bad_trial_idx_mi"][1])
-    #     + list(rawdata["eeg"]["bad_trial_indices"]["bad_trial_idx_voltage"][1])
-    # ]
-    # #
-    # epochs_left.drop(bad_epochs_left).load_data()
-    # epochs_right.drop(bad_epochs_right).load_data()
-    return raw_array_left, raw_array_right, epochs_left, epochs_right
+        fig.canvas.manager.set_window_title(f"Time-Frequency Map ({event})")
+        for ch, ax in enumerate(axes[:-1]):  # for each channel
+            tfr_ev.average().plot([ch], baseline=baseline, mode=mode ,vmin=vmin, vmax=vmax, fmin=fmin, fmax=fmax, cmap=cmap,show=False,axes=ax,colorbar=False)
+
+            ax.set_title(tfr.ch_names[ch], fontsize=10)
+            ax.axvline(0, linewidth=1, color="black", linestyle=":")  # event
+            if ch != 0:
+                ax.set_ylabel("")
+                ax.set_yticklabels("")
+        fig.colorbar(axes[0].images[-1], cax=axes[-1]).ax.set_yscale("linear")
+        fig.suptitle(f"({event}) " + comment)
+
+        if reporting:
+            figures.append(fig)
+        plt.show()
+
+    if reporting:
+        return figures
+
+
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+def plot_ERDs(tfr,channels,tmin=-1.5,tmax=3.5,baseline=(None,0),comment='', reporting=False, boundaries=[0,4,8,13,30,140]):
+
+    # ERDS Plots 
+    power_tfr = tfr.copy().crop(tmin,tmax).pick_channels(channels).apply_baseline(baseline=baseline, mode="percent") # apply baseline
+    df = power_tfr.to_data_frame(time_format=None, long_format=True)
+
+    # Map to frequency bands:
+    freq_bounds = {"_": boundaries[0], "delta": boundaries[1], "theta": boundaries[2], "mu/alpha": boundaries[3], "beta": boundaries[4], "gamma": boundaries[5]}
+    df["band"] = pd.cut(df["freq"], list(freq_bounds.values()), labels=list(freq_bounds)[1:])
+
+    # Filter to retain only relevant frequency bands:
+    freq_bands_of_interest = ["mu/alpha", "beta"]
+    df = df[df.band.isin(freq_bands_of_interest)]
+    df["band"] = df["band"].cat.remove_unused_categories()
+
+    # Order channels for plotting:
+    df["channel"] = df["channel"].cat.reorder_categories(("C3","C4"), ordered=True)
+
+    g = sns.FacetGrid(df, row="band", col="channel", margin_titles=True)
+    g.map(sns.lineplot, "time", "value", "condition", n_boot=10)
+    axline_kw = dict(color="black", linestyle="dashed", linewidth=0.5, alpha=0.5)
+    g.map(plt.axhline, y=0, **axline_kw)
+    g.map(plt.axvline, x=0, **axline_kw)
+    #g.set(ylim=(None, 1.5))
+    g.set_axis_labels("Time (s)", "ERDS (%)")
+    g.set_titles(col_template="{col_name}", row_template="{row_name}")
+    g.add_legend(ncol=2, loc="lower center")
+    g.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.08)
+    g.fig.suptitle("ERDS" + comment)
+
+    if reporting:
+        return g

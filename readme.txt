@@ -1,21 +1,48 @@
-Supporting data for "EEG datasets for motor imagery brain computer interface"
-=============================================================================
+This repository was created as an example of creating individual event-related des/synchronization maps and plots for EEG Motor Imagery data
 
-Cho, H; Ahn, M; Ahn, S; Kwon, M; Jun, S, C (2017): GigaScience Database. http://dx.doi.org/10.5524/100295 
+The repository contains code and instructions to read the ["EEG datasets for motor imagery brain-computer interface"](https://doi.org/10.1093/gigascience/gix034) which is in .mat format and transforms it to MNE-python classes. Also demonstrates how to apply Artifact Subspace Reconstruction (ASR) to clean the data. Contains code to create epochs and finally, it includes custom functions that uses MNE-python tfr (time-frequency) class to create ERDS maps and plots. 
 
-Summary:
---------
-Most investigators of brain computer interface (BCI) believe that BCI can be achieved through induced neuronal activity from the cortex, but not by evoked neuronal activity. Motor imagery (MI) based BCI is one of the standard concepts of BCI, in that the user can generate induced activity by imagining motor movements. However, variations in performance over sessions and subjects are too severe to overcome easily; therefore, a basic understanding and investigation of BCI performance variation is necessary to find critical evidence of performance variation.
-Here we present not only EEG datasets for MI BCI from 52 subjects, but also the results of a psychological and physiological questionnaire, EMG datasets, the locations of 3D EEG electrodes, and EEGs for non-task related states. 
-We validated our EEG datasets by using the percentage of bad trials, event-related desynchronization/synchronization (ERD/ERS) analysis, and classification analysis. After conventional rejection of bad trials, we showed contralateral ERD and ipsilateral ERS in the somatosensory area, which are well-known patterns of MI. Finally, we showed that 73.08% of datasets (38 subjects) included reasonably discriminative information.
-Our EEG datasets included information necessary to determine statistical significance; they consisted of well-discriminated datasets (38 subjects) and less-discriminative datasets. These may provide researchers with opportunities to investigate human factors related to MI BCI performance variation, and may also achieve subject-to-subject transfer by using metadata, including a questionnaire, EEG coordinates, and EEGs for non-task related states. 
+## Dataset
 
-Directory:
-----------
-mat_data/
-52 matlab files named  s'#'.mat , require Matlab 2010a or newer, preferably 64bit operating system
+The ["EEG datasets for motor imagery brain-computer interface"](https://doi.org/10.1093/gigascience/gix034) includes a 64-channels EEG recordings from 52 subjects obtained during motor imagery and execution tasks.
 
-Files:
-------
-Questionnaire_results_of_52_subjects.xlsx - Excel file containing the questionaire results from the 52 participants
+An example of how to read from the dataset and convert to .fif files for MNE-python can be found in the notebook [read_raw_data]
+
+## Artifact Subspace Reconstruction (ASR)
+
+ASR is a technique used to remove artifacts from EEG data. This repository uses the ASR functions from [](https://github.com/DiGyt/asrpy).
+
+An example of how to apply ASR to the dataset is presented in the notebook [ASR_processing]
+
+## ERDS (Event-Related Desynchronization/Synchronization) Maps
+
+ERDS maps are used to visualize changes in brain activity during specific events or tasks. They show the relative power of different frequency bands at different time points. ERDS maps are commonly used in brain-computer interface research to analyze motor imagery tasks.
+
+To generate ERDS maps from the EEG data, follow these steps:
+
+1. Preprocess the EEG data and create epochs. In this case, epochs are created from the ASR pre-processed data. Check the notebook [epochs_ASR] on epoching.
+2. Compute the power spectrum for of the epochs and create a tfr (time-frequency) MNE-python object. Check the notebook [ERDS_plots].
+3. Calculate the ERDS values by comparing the power spectrum to a baseline period and average across epochs. Check the notebook [ERDS_plots].
+4. Visualize the ERDS maps and plot using the custom functions in [utils.py]. Check the notebook [ERDS_plots].
+
+## Usage
+
+To use the code in this repository, follow these steps:
+
+1. Clone the repository: `git clone [insert repository URL]`
+2. Install the required dependencies: `pip install -r requirements.txt`
+3. Download the "EEG datasets for motor imagery brain-computer interface" dataset from [https://doi.org/10.1093/gigascience/gix034].
+4. Run the provided scripts or modify them according to your needs.
+
+## References
+
+- [Insert reference to the "EEG datasets for motor imagery brain-computer interface" dataset]
+- [Insert reference to the ASR algorithm]
+- [Insert reference to ERDS maps]
+
+## License
+
+[Insert license information]
+![Image Description](relative/path/to/x.png)
+
 
