@@ -42,7 +42,7 @@ def data2mne(fname_mat, scale=1e-6):
     senloc = Data['eeg']['senloc'][0][0] #Sensor locations 3D
     bad_trial_indices_voltage = Data['eeg']['bad_trial_indices'][0][0][0][0][0][0][0] #Bad trials indices voltage
     bad_trial_indices_mi = Data['eeg']['bad_trial_indices'][0][0][0][0][0][0][1] #Bad trials indices MI
-    names_types = pd.read_excel(r'ch_names&types.xlsx') #Read file with ch names and types
+    names_types = pd.read_excel(r'utils/ch_names&types.xlsx') #Read file with ch names and types
     ch_types = names_types['ch_types'].tolist() #ch_types
     ch_names = names_types['ch_names'].tolist() #ch_names
 
