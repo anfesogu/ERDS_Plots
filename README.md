@@ -4,14 +4,18 @@ The repository contains code and instructions to read the ["EEG datasets for mot
 
 Example plots from analysis of subject 41 of the dataset
 
-<img src="fig1.jpg"> 
-
-![ERDS Map - Motor Imagery Rigth - s41 - ASR - Wavelet](fig1.png)
-![ERDS Map - Motor Imagery Left - s41 - ASR - Wavelet](fig2.png)
-![ERDS Map - Motor Imagery Rigth - s41 - ASR - Multitapers](fig3.png)
-![ERDS Map - Motor Imagery Left - s41 - ASR - Multitapers](fig4.png)
-![ERDS Plot - Motor Imagery - s41 - ASR - Wavelet](fig5.png)
-![ERDS Plot - Motor Imagery - s41 - ASR - Wavelet](fig6.png)
+ERDS Map - Motor Imagery Rigth - s41 - ASR - Wavelet 
+![](fig1.png)
+ERDS Map - Motor Imagery Left - s41 - ASR - Wavelet 
+![](fig2.png)
+ERDS Map - Motor Imagery Rigth - s41 - ASR - Multitapers 
+![](fig3.png)
+ERDS Map - Motor Imagery Left - s41 - ASR - Multitapers 
+![](fig4.png)
+ERDS Plot - Motor Imagery - s41 - ASR - Wavelet 
+![](fig5.png)
+ERDS Plot - Motor Imagery - s41 - ASR - Wavelet 
+![](fig6.png)
 
 ## Dataset
 
